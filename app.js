@@ -1,3 +1,4 @@
+require('dotenv').config();
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
@@ -7,6 +8,7 @@ var session = require('express-session');
 var csrf = require('csurf');
 var csrfCheck = csrf();
 var rateLimit = require("express-rate-limit");
+var logger = require('./logging').logger;
 
 var indexRouter = require('./routes/index');
 var auth = require('./routes/auth');
@@ -24,10 +26,11 @@ var sessionOptions = {
     name: 'session_id',
     saveUninitialized: false,
     resave: false,
+    //proxy: true, //enable when running behind Nginx rev proxy as discussed in Readme/notes
     cookie: {
         httpOnly: true,
         sameSite: 'lax',
-        //secure: true
+        //secure: true //set to on if using HTTPS
     }
 };
 
@@ -36,20 +39,21 @@ const generalLimiter = rateLimit({
     windowMs: 5 * 60 * 1000,
     onLimitReached: function(req, res, options){
         const ip = req.connection.remoteAddress;
-        console.log(`Warning: ${ip} has exceeded general request limit.`);
+        logger.warn(`${ip} has exceeded general request limit.`);
     },
     max: 500,
     message: "Too many requests. Please try again later"
 });
 
-//auth bcrypt functions can be resource intensive, limit these more than standard api requests
+//auth bcrypt functions can be resource intensive, limit these more than standard api requests.
+//random numbers chosen for demonstration
 const authLimiter = rateLimit({
-    windowMs: 5 * 60 * 1000,
+    windowMs: 2 * 60 * 1000,
     onLimitReached: function(req, res, options){
         const ip = req.connection.remoteAddress;
-        console.log(`Warning: ${ip} has exceeded authentication API request limit.`);
+        logger.log(`Warning: ${ip} has exceeded authentication API request limit.`, true);
     },
-    max: 5,
+    max: 100,
     message: "Too many requests to authentication API. Please try again later."
 });
 
@@ -69,26 +73,22 @@ app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
 app.use(csrfCheck, (req, res, next) => {
     res.locals.csrfToken = req.csrfToken();
     next();
-  });
+});
 
 app.use('/', generalLimiter, indexRouter);
 app.use('/auth', authLimiter, auth);
 
-// catch 404 and forward to error handler
+
 app.use(function(req, res, next) {
     next(createError(404));
-  });
+});
   
-  // error handler
-  app.use(function(err, req, res, next) {
-    // set locals, only providing error in development
+app.use(function(err, req, res, next) {
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
-  
-    // render the error page
     res.status(err.status || 500);
     res.render('error');
-  });
+});
 
 module.exports = app;
 
