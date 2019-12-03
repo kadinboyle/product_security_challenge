@@ -2,6 +2,7 @@ var bcrypt = require('bcrypt');
 var jwt = require('jsonwebtoken');
 var passwordValidator = require('password-validator');
 var badPasswords = require('./known-passwords');
+var logger = require('./logging').logger;
 
 const saltIterations = 10;
 var passwordRules = new passwordValidator();

@@ -90,16 +90,19 @@ router.get('/reset-password-update', function(req, res, next) {
 
 //actually updates the users password if they supply a valid reset token
 router.post('/reset-password-update', function(req, res, next) {
-    const username = req.body.username;
+    var user = req.body.username;
     const suppliedToken = req.body.resetToken;
     const newPassword = req.body.password;
 
-    if(!username || !validator.isEmail(username) 
+    if(user)
+        user = user.trim();
+
+    if(!user || !validator.isEmail(user) 
                 || !suppliedToken 
                 || !validator.isJWT(suppliedToken)
                 || !newPassword 
-                || !AuthHelpers.ValidatePassword(pword))
-        return FailResponse(res, 400, "You must supply a valid username, reset token and password to update");
+                || !AuthHelpers.ValidatePassword(newPassword))
+                return res.render('reset_password_update_landing', { title: 'Reset Password Failure', message: "You must supply a valid username, reset token and suitable password to update" });
 
     userDAO.getUserLoginDetails(user).then(userDetails => {
         if(!userDetails || !userDetails.password_hash)

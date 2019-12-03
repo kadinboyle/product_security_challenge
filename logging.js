@@ -65,10 +65,9 @@ class Logger {
         };
 
         this.info("Sending warning email to admin");
-        transporter.sendMail(mailOptions, function (err, info) {
-        if(err)
-            this.error(`Error occurred when sending warning email to admin: ${err}`)
-        else if(info.accepted.length > 0)
+        transporter.sendMail(mailOptions, function (err, sendInfo) {
+            if(err)
+                this.error(`Error occurred when sending warning email to admin: ${err}`)
             this.info("Email sent");
         });
     }
