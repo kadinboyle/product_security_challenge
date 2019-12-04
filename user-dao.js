@@ -66,7 +66,7 @@ module.exports = {
                 return;
 
             logger.log(`Incrementing failed logins for user ${forUsername}`);
-            if(row.failed_login_counter + 1 > FAILED_LOGIN_LIMIT) //dont bother storing if over limit including latest fail, going to reset anyway
+            if(row.failed_login_counter + 1 >= FAILED_LOGIN_LIMIT) //dont bother storing if over limit including latest fail, going to reset anyway
                 stmt = db.prepare("UPDATE users SET failed_login_counter = 0, account_locked = \"TRUE\" WHERE username = ?")
             else
                 stmt = db.prepare("UPDATE users SET failed_login_counter = failed_login_counter + 1 WHERE username = ?");

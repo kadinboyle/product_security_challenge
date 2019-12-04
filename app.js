@@ -39,7 +39,8 @@ const generalLimiter = rateLimit({
     windowMs: 5 * 60 * 1000,
     onLimitReached: function(req, res, options){
         const ip = req.connection.remoteAddress;
-        logger.warn(`${ip} has exceeded general request limit.`);
+        const user = req.session.user ? (req.session.user.username + "@") : "";
+        logger.warn(`${user}${ip} has exceeded general request limit.`);
     },
     max: 500,
     message: "Too many requests. Please try again later"
@@ -47,19 +48,19 @@ const generalLimiter = rateLimit({
 
 //auth bcrypt functions can be resource intensive, limit these more than standard api requests.
 //random numbers chosen for demonstration
+//50 reqs every 5 mins
 const authLimiter = rateLimit({
-    windowMs: 2 * 60 * 1000,
+    windowMs: 5 * 60 * 1000,
     onLimitReached: function(req, res, options){
         const ip = req.connection.remoteAddress;
-        logger.log(`Warning: ${ip} has exceeded authentication API request limit.`, true);
+        const user = req.session.user ? (req.session.user.username + "@") : "";
+        logger.warn(`${user}${ip} has exceeded authentication API request limit.`, true);
     },
-    max: 100,
+    max: 50,
     message: "Too many requests to authentication API. Please try again later."
 });
 
 var app = express();
-
-// view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended: true}));
@@ -67,8 +68,8 @@ app.use(helmet({noSniff: false}));
 app.use(cookieParser());
 app.use(session(sessionOptions));
 
-app.use('/protected', isAuthenticated, protected);
-app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
+app.use('/protected', generalLimiter, isAuthenticated, protected);
+app.use('/assets', generalLimiter, express.static(path.join(__dirname, 'public/assets')));
 
 app.use(csrfCheck, (req, res, next) => {
     res.locals.csrfToken = req.csrfToken();

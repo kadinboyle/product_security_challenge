@@ -64,7 +64,7 @@ router.post('/reset-password-request', function(req, res, next) {
 
         if(userDetails.account_locked == "TRUE"){
             logger.warn(`Attempt to initiate password reset for locked account with username ${user} by ${req.connection.remoteAddress}`, true);
-            return FailResponse(res, 404, "Your account has been locked! Please contact an administrator.");
+            return res.render('login_fail', {title: "Password Reset Failure - Account Locked", message: "Your account has been locked! Please contact an administrator."});
         }
             
         const token = AuthHelpers.BuildPasswordResetToken(user, userDetails.password_hash);
@@ -109,7 +109,7 @@ router.post('/reset-password-update', function(req, res, next) {
             return FailResponse(res, 400, "Cannot reset your password at this time");
 
         if(userDetails.account_locked == "TRUE")
-            return FailResponse(res, 404, "Your account has been locked! Please contact an administrator.");
+            return res.render('login_fail', {title: "Password Reset Failure - Account Locked", message: "Your account has been locked! Please contact an administrator."});
 
         const isValid = AuthHelpers.ValidatePasswordResetToken(user, userDetails.password_hash, suppliedToken, req);
         if(isValid){
@@ -140,8 +140,11 @@ router.post('/login', csrfCheck, function(req, res, next) {
         if(!userDetails || !userDetails.password_hash)
             return res.render('login_fail', {title: "Login Fail", message: "Incorrect login details"});
 
-        if(userDetails.account_locked == "TRUE")
-            return res.render('login_fail', {title: "Login Fail - Account Locked", message: "Your account has been locked! Please contact an administrator."});
+        if(userDetails.account_locked == "TRUE"){
+            logger.warn(`Attempt to access locked account for user ${user} by ${req.connection.remoteAddress}`);
+            return res.render('login_fail', {title: "Login Failure - Account Locked", message: "Your account has been locked! Please contact an administrator."});
+        }
+            
 
         AuthHelpers.ComparePasswordWithHash(pword, userDetails.password_hash, isValid => {
             if(isValid){

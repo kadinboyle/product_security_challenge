@@ -139,7 +139,7 @@ class Logger {
 }
 
 const logger = new Logger({
-    writeLogToFile: false,
+    writeLogToFile: true,
     filename: "zendesk-sec-challenge"
 });
 
