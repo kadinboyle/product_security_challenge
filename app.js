@@ -22,7 +22,7 @@ function isAuthenticated(req, res, next){
 }
 
 var sessionOptions = {
-    secret: 'MedZ9DdVsg4zMVxY3bQZeriKB4jwtqyI',
+    secret: 'MedZ9DdVsg4zMVxY3bQZeriKB4jwtqyI', //would normally pass this in environment variable, not check in to source code
     name: 'session_id',
     saveUninitialized: false,
     resave: false,
